@@ -1,0 +1,11 @@
+/** 全局 CSS 变量，这种变量不仅可以在 CSS 和 SCSS 中使用，还可以导入到 JS 中使用 */
+
+:root {
+  /** 全局背景色 */
+  --f2c-body-bg-color: #ffffff;
+  /** Sidebar 组件 */
+  --f2c-sidebar-width: 220px;
+  --f2c-sidebar-hide-width: 68px;
+  --f2c-sidebar-bg-color: #494949;
+  --f2c-border-color: var(--el-border-color-light);
+}
