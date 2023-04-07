@@ -1,6 +1,8 @@
+import { defineAsyncComponent } from 'vue'
 import { type RouteRecordRaw, createRouter, createWebHistory } from 'vue-router'
 
-export const Layout = () => import('@/layout/index.vue')
+export const Layout = defineAsyncComponent(() => import('@/layout/index.vue'))
+const _import = (path: String) => defineAsyncComponent(() => import(`/src/views/${path}.vue`))
 const modules: any = import.meta.glob('./modules/*.ts')
 
 /** 常驻路由 */
@@ -25,14 +27,14 @@ export const constantRoutes: RouteRecordRaw[] = [
 
   {
     path: '/403',
-    component: () => import('@/views/error-page/403.vue'),
+    component: _import('error-page/403'),
     meta: {
       hidden: true
     }
   },
   {
     path: '/404',
-    component: () => import('@/views/error-page/404.vue'),
+    component: _import('error-page/404'),
     meta: {
       hidden: true
     },
@@ -49,7 +51,7 @@ export const constantRoutes: RouteRecordRaw[] = [
     children: [
       {
         path: 'docs',
-        component: () => import('@/views/router-demo/RouterDocs.vue'),
+        component: _import('router-demo/RouterDocs'),
         name: 'RouterDocs',
         meta: {
           title: '官方文档'
@@ -57,7 +59,7 @@ export const constantRoutes: RouteRecordRaw[] = [
       },
       {
         path: 'menu',
-        component: () => import('@/views/router-demo/RouterMenu.vue'),
+        component: _import('router-demo/RouterMenu'),
         name: 'RouterMenu',
         meta: {
           title: '路由与菜单'
@@ -65,7 +67,7 @@ export const constantRoutes: RouteRecordRaw[] = [
       },
       {
         path: 'detail',
-        component: () => import('@/views/router-demo/RouterDetail.vue'),
+        component: _import('router-demo/RouterDetail'),
         name: 'RouterDetail',
         meta: {
           activeMenu: '/router-demo/menu',
@@ -74,7 +76,7 @@ export const constantRoutes: RouteRecordRaw[] = [
       },
       {
         path: 'keep-alive',
-        component: () => import('@/views/router-demo/RouterKeepAlive.vue'),
+        component: _import('router-demo/RouterKeepAlive'),
         name: 'RouterKeepAlive',
         meta: {
           title: '组件缓存'
@@ -82,7 +84,7 @@ export const constantRoutes: RouteRecordRaw[] = [
       },
       {
         path: 'keep-alive-detail',
-        component: () => import('@/views/router-demo/RouterKeepAliveDetail.vue'),
+        component: _import('router-demo/RouterKeepAliveDetail'),
         name: 'RouterKeepAliveDetail', // cache: true时，必须保证name与component中的name一致
         meta: {
           cache: true,
@@ -104,7 +106,7 @@ export const constantRoutes: RouteRecordRaw[] = [
     children: [
       {
         path: 'layout-content',
-        component: () => import('@/views/components/LayoutContentDemo.vue'),
+        component: _import('components/LayoutContentDemo'),
         name: 'LayoutContentDemo',
         meta: {
           title: '页面布局'
@@ -112,7 +114,7 @@ export const constantRoutes: RouteRecordRaw[] = [
       },
       {
         path: 'card-view',
-        component: () => import('@/views/components/ViewCardDemo.vue'),
+        component: _import('components/ViewCardDemo'),
         name: 'ViewCardDemo',
         meta: {
           title: '查看Card'
