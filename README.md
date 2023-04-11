@@ -9,7 +9,13 @@
 
 ## 区块分割（chunk split）
 
-根据 vite 官方文档提示，在vite的配置文件，通过 build.rollupOptions 的配置进行手动配置，代码如下：
+根据 vite 官方文档提示，在vite的配置文件，通过 build.rollupOptions 的配置进行手动配置。
+
+vite官网：https://cn.vitejs.dev/config/build-options.html#build-rollupoptions
+rollupOptions 配置参考网站：
+https://rollupjs.org/configuration-options/#output-manualchunks
+
+代码如下：
 ```
 // vite.config.ts
 import { fileURLToPath, URL } from 'node:url'
@@ -185,7 +191,12 @@ export default defineConfig({
   ],
 });
 ```
-依赖项也可以引入外部CDN库？？？？
+![image](src/assets/readme/8.png)
+
+引入外部CDN库也可以，但是考虑到网络安全问题并不建议使用，该方法使用 vite-plugin-cdn-import 插件，具体使用方法参考官方文档，这里不详细介绍了。
+https://github.com/MMF-FE/vite-plugin-cdn-import/blob/master/README.zh-CN.md
+
+
 
 ## 打包压缩
 
@@ -259,7 +270,7 @@ npm install vite-plugin-compression -D
 
 通过懒加载模块避免一次加载所以模块，然后每个模块中还可以使用异步加载，加速网站响应速度，提高用户体验。
 
-### 1、defineAsyncComponent
+### defineAsyncComponent
 
 在 Vue 2.x 中，声明一个异步组件只需这样：
 
@@ -275,11 +286,142 @@ import { defineAsyncComponent } from 'vue'
 const child = defineAsyncComponent(() => import('@/components/async-component-child.vue'))
 
 ```
-
+此外还支持高级选项配置，参考 vue3 官方 https://cn.vuejs.org/guide/components/async.html#basic-usage
 ```
+
 const AsyncComponent = defineAsyncComponent({
-  loader: () => import('./AsyncComponent.vue'),
-  delay: 200,
-  timeout: 3000
+  // 异步加载组件
+  loader: () => import('./MyComponent.vue'),
+  // 加载中的占位符组件
+  loadingComponent: {
+    template: '<div>Loading...</div>'
+  },
+  // 加载失败的占位符组件
+  errorComponent: {
+    template: '<div>Error</div>'
+  },
+  // 延迟多少毫秒显示loading组件（默认200ms）
+  delay: 500,
+  // 超时时间（默认：Infinity）
+  timeout: 3000 
 })
 ```
+当组件第一次被渲染时，会触发异步加载，然后显示 loadingComponent 组件。如果加载成功，则会显示异步组件的内容；如果加载失败，则会显示 errorComponent 组件。
+
+### 以一个简单页面为例：
+
+![image](src/assets/readme/9.png)
+
+在 Home.vue 中打开一个弹窗，弹窗封装为一个组件 AddDialog.vue
+
+代码如下：
+
+```
+// 子页面 AddDialog.vue
+<template>
+  <el-dialog v-model="dialogShow" title="Tips" width="30%">
+    <span>This is a message</span>
+
+    <template #footer>
+      <div style="text-align: center">
+        <el-button @click="emit('update:dialogVisible', false)">取消</el-button>
+        <el-button type="primary" @click="emit('update:dialogVisible', false)">确认</el-button>
+      </div>
+    </template>
+
+  </el-dialog>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+const props = defineProps({
+  dialogVisible: {
+    type: Boolean,
+  },
+});
+const emit = defineEmits(['update:dialogVisible'])
+
+const dialogShow = computed({
+  get() {
+    return props.dialogVisible
+  },
+  set(val) {
+    return val
+  }
+})
+
+</script>
+```
+```
+// Home.vue
+<template>
+  <div>
+    <el-button text @click="show = true">
+      打开弹窗
+    </el-button>
+    <add-dialog v-model:dialogVisible="show" v-if="show" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import AddDialog from '@/components/AddDialog.vue'
+const show = ref(false)
+</script>
+```
+
+1、没有做异步懒加载的打包情况 和 加载情况如下：
+
+在加载 Home 页面的时候，AddDialog 已经被加载
+![image](src/assets/readme/10.png)
+
+同时可以看一下打包之后，Home页的文件大小
+![image](src/assets/readme/11.png)
+
+2、优化一下 Home，改成 defineAsyncComponent 异步组件
+
+```
+// Home.vue
+<template>
+  <div>
+    <el-button @click="show = true">
+      打开弹窗
+    </el-button>
+    <add-dialog v-model:dialogVisible="show" v-if="show" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, defineAsyncComponent } from 'vue'
+const AddDialog = defineAsyncComponent(() => import('@/components/AddDialog.vue'))
+const show = ref(false)
+</script>
+```
+结果如下：
+![image](src/assets/readme/12.png)
+只有点开弹窗时候才加载了组件。
+
+![image](src/assets/readme/13.png)
+打包结果也很明显，Home.js 被拆解了，多出了一个AddDialog.js。
+
+由此可以证明，这种方式可以拆解出异步组件，并且可以提升首次加载页面的速度。
+该方法适用于大型项目，需要拆解出很多小组件，提升页面加载速度，但是需要规划一下拆解方案，如果拆分不合理，反而增加打包体积，影响加载速度。
+
+### Suspense
+
+Suspense 可以搭配异步组件一起使用，目前还是实验性功能，它让我们可以在组件树上层等待下层的多个嵌套异步依赖项解析完成，并可以在等待时渲染一个加载状态。
+
+```
+<Suspense>
+  <!-- 具有深层异步依赖的组件 -->
+  <Dashboard />
+
+  <!-- 在 #fallback 插槽中显示 “正在加载中” -->
+  <template #fallback>
+    Loading...
+  </template>
+</Suspense>
+```
+用法有点像骨架屏，等待异步组件都完成之后，Suspense才进入完成状态。由于目前还不稳定，api也会更新，暂时不推荐使用。可以查看官方文档：https://cn.vuejs.org/guide/built-ins/suspense.html
+
+
