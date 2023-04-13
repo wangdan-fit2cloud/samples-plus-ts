@@ -1,11 +1,11 @@
 # vue3+vite 如何打包优化
 
 ## 前言
-首先 npm run bulid 看一下打包之后的目录结构情况
+首先，在没有做任何配置之前，npm run bulid 看一下打包之后的目录结构情况：
 
 ![image](src/assets/readme/1.png)
 
-我们可以看出，第三方依赖包文件在没有处理的情况下是非常大的，而且随着版本的迭代、业务的增多，第三方依赖也会越来越多，打包出来的文件也会越来越大，从而造成网页在首次进入时比较缓慢。针对这个问题，首先想到的是分包的解决方案，将一个大文件分割成多个小文件，在第一次进入网页时可以提升加载速度。
+可以看出，第三方依赖包文件在没有处理的情况下是非常大的，而且随着版本的迭代、业务的增多，第三方依赖也会越来越多，打包出来的文件也会越来越大，从而造成网页在首次进入时比较缓慢。针对这个问题，首先想到的是分包的解决方案，将一个大文件分割成多个小文件，在第一次进入网页时可以提升加载速度。
 
 ## 区块分割（chunk split）
 
@@ -51,8 +51,7 @@ export default defineConfig({
 
 ![image](src/assets/readme/2.png)
 
-这时候可以看出来，这样根据依赖分别拆分，打包出来的文件数量变多，单个文件的大小变小了。
-在这个基础上可以继续扩展，例如：
+这时候可以看出来，根据依赖分别拆分，打包出来的文件数量变多，单个文件的大小变小了。 在这个基础上可以继续扩展，例如：
 
 ### 1、根据文件分类和重命名，把css、png、js分开
 
@@ -80,7 +79,7 @@ rollupOptions: {
 
 ### 2、将业务模块分块打包，把第三方插件和实际业务模块分开
 
-根据实际项目的具体情况分模块，比如我的 views 中，一个文件夹就是一个模块；我还想让css和图片就统一在assets中，重新规划一下文件，代码如下：
+根据实际项目的具体情况分模块，比如我的 views 中，一个文件夹就是一个模块；我还想让css和图片就统一在 assets 中，重新规划一下文件后，代码如下：
 
 ```
  build: {
@@ -117,7 +116,7 @@ rollupOptions: {
 ![image](src/assets/readme/4.png)
 
 
-### 3、第三方代码分包后，过于琐碎，只单独提出个别大文件
+### 3、第三方代码分包后，文件过于琐碎，只单独提出个别大文件
 
 例如：我要拆分出来vue、element-plus、fit2cloud-ui-plus、axios
 
@@ -175,7 +174,8 @@ rollupOptions: {
       },
     },
 ```
-此外还有一些第三方的拆分插件工具可以，比如：vite-plugin-chunk-split。
+除此之外，还有一些第三方的拆分插件工具可以使用，
+比如：vite-plugin-chunk-split。https://github.com/sanyuan0704/vite-plugin-chunk-split#readme
 
 
 ## 打包压缩
@@ -246,7 +246,9 @@ npm install vite-plugin-compression -D
 
 此外也有其他压缩插件，比如 rollup-plugin-gzip，功能是一样的，缺点也是增加 CPU 消耗；配合vite的内置压缩，更推荐 vite-plugin-compression。也有图片和 css 的压缩工具 vite-plugin-imagemin 等等。
 
-## 三、懒加载和异步组件
+综上所述，考虑到浏览器解压的问题，对于大文件还是进行拆分更推荐一些。
+
+## 懒加载和异步组件
 
 通过懒加载模块避免一次加载所以模块，然后每个模块中还可以使用异步加载，加速网站响应速度，提高用户体验。
 
@@ -292,7 +294,7 @@ const AsyncComponent = defineAsyncComponent({
 
 ![image](src/assets/readme/9.png)
 
-在 Home.vue 中打开一个弹窗，弹窗封装为一个组件 AddDialog.vue
+在 Home.vue 中，通过点击按钮，打开一个弹窗，弹窗封装为一个组件 AddDialog.vue
 
 代码如下：
 
@@ -350,7 +352,7 @@ const show = ref(false)
 </script>
 ```
 
-1、没有做异步懒加载的打包情况 和 加载情况如下：
+没有做异步懒加载的打包情况 和 加载情况如下：
 
 在加载 Home 页面的时候，AddDialog 已经被加载
 ![image](src/assets/readme/10.png)
@@ -358,7 +360,7 @@ const show = ref(false)
 同时可以看一下打包之后，Home页的文件大小
 ![image](src/assets/readme/11.png)
 
-2、优化一下 Home，改成 defineAsyncComponent 异步组件
+优化一下 Home，改成 defineAsyncComponent 异步组件
 
 ```
 // Home.vue
@@ -379,13 +381,12 @@ const show = ref(false)
 ```
 结果如下：
 ![image](src/assets/readme/12.png)
-只有点开弹窗时候才加载了组件。
+只有点开弹窗时候才加载了组件。同时，打包结果也很明显，Home.js 被拆解了，多出了一个AddDialog.js。
 
 ![image](src/assets/readme/13.png)
-打包结果也很明显，Home.js 被拆解了，多出了一个AddDialog.js。
 
 由此可以证明，这种方式可以拆解出异步组件，并且可以提升首次加载页面的速度。
-该方法适用于大型项目，需要拆解出很多小组件，提升页面加载速度，但是需要规划一下拆解方案，如果拆分不合理，反而增加打包体积，影响加载速度。
+该方法适用于大型项目，需要拆解出很多小组件，提升页面加载速度，但是需要合理规划一下拆解方案，如果拆分不合理，反而增加打包体积，影响加载速度。
 
 ### Suspense
 
