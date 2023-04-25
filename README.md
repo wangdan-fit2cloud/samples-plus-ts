@@ -115,6 +115,39 @@ rollupOptions: {
 
 ![image](src/assets/readme/4.png)
 
+也可以分不同的文件夹，打包之后每个模块一个文件夹
+
+```
+ build: {
+    rollupOptions: {
+      output: {
+          // 用于命名代码拆分时创建的共享块的输出命名
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId
+            ? chunkInfo.facadeModuleId.split('/')
+            : [];
+          const fileName =
+            facadeModuleId[facadeModuleId.length - 2] || '[name]';
+          return `js/${fileName}/[name].[hash].js`;
+        },
+        // 用于从入口点创建的块的打包输出格式
+        entryFileNames: `js/[name]-[hash].js`,
+        // assetFileNames 不设置 所有css和图片文件就默认在assets中
+        // assetFileNames: `assets/[ext]/[name]-[hash].[ext]`,
+        manualChunks(id: string) {
+          if (id.includes('node_modules')) {
+            return 'vendor'
+          }
+          // 一个模块只要一个文件，如果需要一个vue一个文件，以下代码可忽略
+          if (id.includes('/src/views/')) {
+            return id.toString().split('/src/views/')[1].split('/')[0]
+          }
+        }
+      }
+    }
+  }
+```
+
 
 ### 3、第三方代码分包后，文件过于琐碎，只单独提出个别大文件
 
@@ -144,10 +177,6 @@ rollupOptions: {
           if (id.includes('node_modules')) {
             if (id.includes('vue')) {
               return 'vue'
-            } else if (id.includes('element-plus')) {
-              return 'element-plus'
-            } else if (id.includes('fit2cloud-ui-plus')) {
-              return 'fit2cloud-ui-plus'
             } else if (id.includes('axios')) {
               return 'axios'
             }
